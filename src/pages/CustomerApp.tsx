@@ -3,8 +3,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, Heart, ShoppingBag, User as UserIcon, X, Plus, Minus, Search, ArrowRight, Flame, Utensils, LogOut, Camera, ChevronRight, History } from 'lucide-react';
 import { collection, onSnapshot, addDoc, serverTimestamp, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
-import { db, storage } from '../core/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../core/firebase';
 import { useAuth } from '../core/context/AuthContext';
 import type { Product, OrderItem, Modifier, Order } from '../core/types';
 
@@ -38,6 +37,25 @@ const GlobalStyles = () => (
     .text-bk-red { color: #D62300; }
   `}</style>
 );
+
+// ============================================================================
+// 🛠️ HELPERS
+// ============================================================================
+const IMGBB_API_KEY = "5c0267c514dca7035a2da08807954263";
+
+const uploadImageToImgBB = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+        method: 'POST',
+        body: formData,
+    });
+    const data = await response.json();
+    if (data.success) {
+        return data.data.url;
+    }
+    throw new Error('Image upload failed');
+};
 
 // ============================================================================
 // 🧠 STATE MANAGEMENT (Optimized)
@@ -435,44 +453,108 @@ const CartPage: React.FC = () => {
     if (cart.length === 0) {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
-                <ShoppingBag size={64} className="text-bk-brown/20 mb-6" />
-                <h2 className="text-3xl font-black text-bk-brown mb-2">Cart Empty</h2>
-                <BouncyButton onClick={() => navigate('/customer/menu')} className="bg-bk-red text-white px-10 py-4 rounded-full font-bold">Start Ordering</BouncyButton>
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="w-32 h-32 bg-white/50 rounded-full flex items-center justify-center mb-8 border-4 border-white shadow-inner"
+                >
+                    <ShoppingBag size={64} className="text-bk-brown/10" />
+                </motion.div>
+                <h2 className="text-3xl font-black text-bk-brown mb-4 tracking-tight">Your Tray is Empty</h2>
+                <p className="text-bk-brown/40 font-medium mb-10 max-w-[240px]">Seems like you haven't added any cravings yet.</p>
+                <BouncyButton onClick={() => navigate('/customer/menu')} className="bg-bk-red text-white px-10 py-5 rounded-[2rem] font-bold shadow-2xl shadow-red-500/30">Start Ordering</BouncyButton>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen pt-12 pb-40 px-6">
-            <h1 className="text-4xl font-black text-bk-brown mb-8">Your Tray</h1>
-            <div className="space-y-4">
-                {cart.map((item, i) => (
-                    <div key={i} className="bg-white p-4 rounded-[1.5rem] flex items-center justify-between">
+        <div className="min-h-screen pt-14 pb-48 px-6">
+            <header className="flex justify-between items-center mb-10">
+                <h1 className="text-4xl font-black text-bk-brown tracking-tight italic uppercase">Your Tray</h1>
+                <div className="bg-white/50 px-4 py-2 rounded-2xl border border-white">
+                    <span className="font-bold text-bk-brown text-sm">{cart.length} items</span>
+                </div>
+            </header>
+
+            <div className="space-y-6">
+                <AnimatePresence mode="popLayout">
+                    {cart.map((item, i) => (
+                        <motion.div
+                            key={`${item.productId}-${i}`}
+                            layout
+                            initial={{ x: -20, opacity: 0 }}
+                            animate={{ x: 0, opacity: 1 }}
+                            exit={{ x: 20, opacity: 0 }}
+                            className="glass-panel p-4 rounded-[2.5rem] flex items-center gap-5 relative group"
+                        >
+                            <div className="w-24 h-24 bg-white rounded-[1.8rem] overflow-hidden flex-shrink-0 shadow-inner">
+                                <img src={item.image || 'https://via.placeholder.com/200'} alt={item.name} className="w-full h-full object-cover" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start mb-1">
+                                    <h3 className="font-bold text-bk-brown text-lg leading-tight">{item.name}</h3>
+                                    <button
+                                        onClick={() => removeFromCart(item.productId)}
+                                        className="p-1.5 text-bk-brown/20 hover:text-bk-red transition-colors"
+                                    >
+                                        <X size={18} strokeWidth={3} />
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-bk-brown/30 bg-bk-brown/5 px-2 py-0.5 rounded-md">Qty: {item.quantity}</div>
+                                    {item.modifiers.length > 0 && (
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-bk-orange bg-bk-orange/10 px-2 py-0.5 rounded-md">Custom</div>
+                                    )}
+                                </div>
+                                <div className="flex justify-between items-end">
+                                    <div className="font-black text-bk-red text-xl leading-none">{item.price.toLocaleString()} ₸</div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            </div>
+
+            {/* Premium Summary Card */}
+            <div className="fixed bottom-28 left-6 right-6 z-40">
+                <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    className="glass-panel p-8 rounded-[3rem] bg-[#502314]/95 text-[#F5EBDC] shadow-[0_20px_50px_rgba(80,35,20,0.4)] border-none overflow-hidden relative"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-bk-red rounded-full filter blur-[60px] opacity-20 -translate-y-1/2 translate-x-1/2" />
+
+                    <div className="flex justify-between items-center mb-6 relative z-10">
                         <div>
-                            <h3 className="font-bold text-bk-brown text-lg">{item.name}</h3>
-                            <div className="text-sm text-bk-brown/50">Qty: {item.quantity}</div>
+                            <p className="text-[#F5EBDC]/40 text-xs font-black uppercase tracking-widest mb-1">Total Payable</p>
+                            <h2 className="text-4xl font-black italic tracking-tighter">{totalPrice.toLocaleString()} <span className="text-xl">₸</span></h2>
                         </div>
                         <div className="text-right">
-                            <p className="text-bk-red font-black">{item.price.toLocaleString()} ₸</p>
-                            <button onClick={() => removeFromCart(item.productId)} className="text-xs text-bk-brown/40 underline">Remove</button>
+                            <p className="text-[#F5EBDC]/40 text-[10px] font-bold uppercase mb-1">Fee included</p>
+                            <div className="bg-bk-red/20 px-3 py-1 rounded-full text-[10px] font-black text-bk-red border border-bk-red/30">EXPRESS</div>
                         </div>
                     </div>
-                ))}
-            </div>
-            <div className="fixed bottom-24 left-6 right-6">
-                <div className="glass-panel p-6 rounded-[2rem] bg-[#502314]/95 text-[#F5EBDC]">
-                    <div className="flex justify-between mb-6">
-                        <span>Total:</span>
-                        <span className="font-bold text-xl">{totalPrice.toLocaleString()} ₸</span>
-                    </div>
+
                     <BouncyButton
                         onClick={handleCheckout}
                         disabled={loading}
-                        className="w-full bg-[#F5EBDC] text-[#502314] py-4 rounded-xl font-black"
+                        className="w-full bg-[#F5EBDC] text-[#502314] h-16 rounded-[2rem] font-black text-lg flex items-center justify-center gap-3 shadow-xl overflow-hidden relative group"
                     >
-                        {loading ? 'Processing...' : 'Checkout'}
+                        {loading ? (
+                            <div className="w-6 h-6 border-4 border-[#502314] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                            <>
+                                <span>Place Order</span>
+                                <motion.div
+                                    animate={{ x: [0, 5, 0] }}
+                                    transition={{ repeat: Infinity, duration: 1.5 }}
+                                >
+                                    <ArrowRight size={20} />
+                                </motion.div>
+                            </>
+                        )}
                     </BouncyButton>
-                </div>
+                </motion.div>
             </div>
         </div>
     );
@@ -511,9 +593,7 @@ const ProfilePage: React.FC = () => {
 
         setIsSaving(true);
         try {
-            const storageRef = ref(storage, `profiles/${user.uid}`);
-            await uploadBytes(storageRef, file);
-            const url = await getDownloadURL(storageRef);
+            const url = await uploadImageToImgBB(file);
             await updateDoc(doc(db, 'users', user.uid), { photoURL: url });
         } catch (e) {
             console.error("Upload error:", e);
@@ -663,7 +743,14 @@ const CustomerApp: React.FC = () => {
 
     // Logic kept simple for demo
     const addToCart = (product: Product, quantity: number, modifiers: Modifier[]) => {
-        setCart(prev => [...prev, { productId: product.id, name: product.name, price: product.price, quantity, modifiers }]);
+        setCart(prev => [...prev, {
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            quantity,
+            modifiers,
+            image: product.image
+        }]);
     };
     const removeFromCart = (id: string) => setCart(p => p.filter(i => i.productId !== id));
     const clearCart = () => setCart([]);

@@ -32,6 +32,7 @@ export interface OrderItem {
     price: number;
     quantity: number;
     modifiers: Modifier[];
+    image?: string;
 }
 
 export interface Order {

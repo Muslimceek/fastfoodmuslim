@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #fef2f2;
+  --color-primary-100: #fee2e2;
+  --color-primary-200: #fecaca;
+  --color-primary-300: #fca5a5;
+  --color-primary-400: #f87171;
+  --color-primary-500: #ef4444;
+  --color-primary-600: #D62300;
+  --color-primary-700: #b91c1c;
+  --color-primary-800: #991b1b;
+  --color-primary-900: #7f1d1d;
+  --color-primary-950: #450a0a;
+
+  --color-royal-red: #D62300;
+  --color-royal-orange: #F5AF18;
+  --color-royal-brown: #502D16;
+  --color-royal-cream: #F5EBDD;
+
+  --font-sans: "Inter Tight", "Inter", "sans-serif";
+
+  --radius-ios: 2.5rem;
+  --radius-giant: 4rem;
+
+  --shadow-royal: 0 20px 50px -12px rgba(214, 35, 0, 0.3);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #1a1a1a;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --background: #121212;
+      --foreground: #ffffff;
+    }
+  }
+
+  body {
+    background-color: #000;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(214, 35, 0, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(245, 175, 24, 0.05) 0px, transparent 50%);
+    color: #fff;
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+@utility glass-royal {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@layer components {
+  .premium-card {
+    @apply glass-royal rounded-ios shadow-glass p-8;
+  }
+
+  .primary-button {
+    @apply bg-royal-red hover:bg-[#B51E00] text-white font-black py-4 px-8 rounded-2xl transition-all duration-300 transform active:scale-95 shadow-royal uppercase tracking-widest italic;
+  }
+
+  .ios-input {
+    @apply bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-royal-orange transition-all text-white placeholder-white/20;
+  }
+}

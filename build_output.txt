@@ -1,0 +1,32 @@
+
+> dastfood@0.0.0 build
+> tsc -b && vite build
+
+vite v7.3.1 building client environment for production...
+transforming...
+Error: Cannot apply unknown utility class `glass-morphism`
+    at onInvalidCandidate (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:21:1511)
+    at Te (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:16:36326)
+    at /Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:21:355
+    at Rr (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:3:1718)
+    at _ (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:3:1377)
+    at $e (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:21:172)
+    at un (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:38:294)
+    at async cn (/Users/muslim/Desktop/dastfood/node_modules/tailwindcss/dist/lib.js:38:631)
+    at async Xr (/Users/muslim/Desktop/dastfood/node_modules/@tailwindcss/node/dist/index.js:10:3417)
+    at async I (/Users/muslim/Desktop/dastfood/node_modules/@tailwindcss/postcss/dist/index.js:10:3977)
+✓ 21 modules transformed.
+✗ Build failed in 481ms
+error during build:
+[vite:css] [postcss] tailwindcss: /Users/muslim/Desktop/dastfood/src/index.css:1:1: Cannot apply unknown utility class `glass-morphism`
+file: /Users/muslim/Desktop/dastfood/src/index.css:1:0
+    at Input.error (/Users/muslim/Desktop/dastfood/node_modules/postcss/lib/input.js:135:16)
+    at Root.error (/Users/muslim/Desktop/dastfood/node_modules/postcss/lib/node.js:146:32)
+    at Object.Once (/Users/muslim/Desktop/dastfood/node_modules/@tailwindcss/postcss/dist/index.js:10:6911)
+    at async LazyResult.runAsync (/Users/muslim/Desktop/dastfood/node_modules/postcss/lib/lazy-result.js:293:11)
+    at async runPostCSS (file:///Users/muslim/Desktop/dastfood/node_modules/vite/dist/node/chunks/config.js:30145:19)
+    at async compilePostCSS (file:///Users/muslim/Desktop/dastfood/node_modules/vite/dist/node/chunks/config.js:30129:6)
+    at async compileCSS (file:///Users/muslim/Desktop/dastfood/node_modules/vite/dist/node/chunks/config.js:30059:26)
+    at async Object.handler (file:///Users/muslim/Desktop/dastfood/node_modules/vite/dist/node/chunks/config.js:29592:54)
+    at async transform (file:///Users/muslim/Desktop/dastfood/node_modules/rollup/dist/es/shared/node-entry.js:21283:16)
+    at async ModuleLoader.addModuleSource (file:///Users/muslim/Desktop/dastfood/node_modules/rollup/dist/es/shared/node-entry.js:21497:36)

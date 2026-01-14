@@ -51,7 +51,11 @@ export interface UserProfile {
     uid: string;
     email: string;
     displayName?: string;
-    favoriteProducts: string[]; // Array of product IDs
+    photoURL?: string;
+    role: 'admin' | 'kitchen' | 'manager' | 'customer';
+    favoriteProducts: string[];
+    language: 'ru' | 'uz' | 'ky' | 'kk' | 'tg';
+    currency: 'KZT' | 'RUB' | 'USD' | 'UZS' | 'KGS' | 'TJS';
     createdAt: any;
     updatedAt: any;
 }

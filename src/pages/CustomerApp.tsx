@@ -5,6 +5,7 @@ import { Home, Heart, ShoppingBag, User as UserIcon, X, Plus, Minus, Search, Arr
 import { collection, onSnapshot, addDoc, serverTimestamp, query, where, orderBy, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../core/firebase';
 import { useAuth } from '../core/context/AuthContext';
+import { useSettings } from '../core/context/SettingsContext';
 import type { Product, OrderItem, Modifier, Order } from '../core/types';
 
 // ============================================================================
@@ -95,39 +96,42 @@ const BouncyButton: React.FC<{ onClick?: () => void; children: React.ReactNode; 
 // ============================================================================
 // 🍔 PRODUCT CARD (Glass & Parallax)
 // ============================================================================
-const ProductCard: React.FC<{ product: Product; onClick: () => void }> = ({ product, onClick }) => (
-    <motion.div
-        layoutId={`product-${product.id}`}
-        onClick={onClick}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileTap={{ scale: 0.95 }}
-        className="glass-panel p-3 rounded-[2rem] relative overflow-hidden group cursor-pointer"
-    >
-        <div className="absolute top-3 right-3 z-10 bg-bk-red backdrop-blur px-3 py-1.5 rounded-full shadow-lg shadow-red-500/20">
-            <span className="text-xs font-black text-white">{product.price.toLocaleString()} ₸</span>
-        </div>
-        <div className="absolute top-3 left-3 z-10 bg-white/80 backdrop-blur px-2 py-1 rounded-full">
-            <span className="text-[10px] font-bold text-bk-brown uppercase">{product.category}</span>
-        </div>
-        <div className="w-full aspect-square rounded-[1.5rem] mb-3 overflow-hidden bg-white">
-            <motion.img
-                src={product.image || 'https://via.placeholder.com/300'}
-                alt={product.name}
-                className="w-full h-full object-cover"
-                whileHover={{ scale: 1.1 }}
-                transition={{ duration: 0.4 }}
-            />
-        </div>
-        <div className="px-1 pb-1">
-            <h3 className="font-bold text-bk-brown text-base leading-tight mb-1.5">{product.name}</h3>
-            <p className="text-bk-brown/50 text-xs line-clamp-2 leading-relaxed mb-2">{product.description}</p>
-        </div>
-        <div className="absolute bottom-3 right-3 w-10 h-10 bg-bk-red rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-red-500/30">
-            <Plus size={18} strokeWidth={3} />
-        </div>
-    </motion.div>
-);
+const ProductCard: React.FC<{ product: Product; onClick: () => void }> = ({ product, onClick }) => {
+    const { formatPrice } = useSettings();
+    return (
+        <motion.div
+            layoutId={`product-${product.id}`}
+            onClick={onClick}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileTap={{ scale: 0.95 }}
+            className="glass-panel p-3 rounded-[2rem] relative overflow-hidden group cursor-pointer"
+        >
+            <div className="absolute top-3 right-3 z-10 bg-bk-red backdrop-blur px-3 py-1.5 rounded-full shadow-lg shadow-red-500/20">
+                <span className="text-xs font-black text-white">{formatPrice(product.price)}</span>
+            </div>
+            <div className="absolute top-3 left-3 z-10 bg-white/80 backdrop-blur px-2 py-1 rounded-full">
+                <span className="text-[10px] font-bold text-bk-brown uppercase">{product.category}</span>
+            </div>
+            <div className="w-full aspect-square rounded-[1.5rem] mb-3 overflow-hidden bg-white">
+                <motion.img
+                    src={product.image || 'https://via.placeholder.com/300'}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    whileHover={{ scale: 1.1 }}
+                    transition={{ duration: 0.4 }}
+                />
+            </div>
+            <div className="px-1 pb-1">
+                <h3 className="font-bold text-bk-brown text-base leading-tight mb-1.5">{product.name}</h3>
+                <p className="text-bk-brown/50 text-xs line-clamp-2 leading-relaxed mb-2">{product.description}</p>
+            </div>
+            <div className="absolute bottom-3 right-3 w-10 h-10 bg-bk-red rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-lg shadow-red-500/30">
+                <Plus size={18} strokeWidth={3} />
+            </div>
+        </motion.div>
+    );
+};
 
 // ============================================================================
 // 🧢 PRODUCT DETAILS (Bottom Sheet)
@@ -153,7 +157,7 @@ const ProductModal: React.FC<{ product: Product | null; onClose: () => void }> =
     };
 
     const total = (product.price + selectedModifiers.reduce((a, m) => a + m.price, 0)) * quantity;
-
+    const { t, formatPrice } = useSettings();
     return (
         <AnimatePresence>
             {product && (
@@ -184,7 +188,7 @@ const ProductModal: React.FC<{ product: Product | null; onClose: () => void }> =
                                 <div className="flex justify-between items-start mb-3">
                                     <h2 className="text-3xl font-black text-bk-brown leading-tight tracking-tight flex-1">{product.name}</h2>
                                     <div className="bg-bk-red px-4 py-2 rounded-full ml-4">
-                                        <span className="text-white font-black text-lg">{product.price.toLocaleString()} ₸</span>
+                                        <span className="text-white font-black text-lg">{formatPrice(product.price)}</span>
                                     </div>
                                 </div>
                                 <p className="text-bk-brown/70 text-base font-medium leading-relaxed">{product.description}</p>
@@ -193,7 +197,7 @@ const ProductModal: React.FC<{ product: Product | null; onClose: () => void }> =
                             {product.availableModifiers && product.availableModifiers.length > 0 && (
                                 <div className="glass-panel p-5 rounded-[2rem] mb-6">
                                     <h3 className="font-bold text-bk-brown text-lg mb-4 flex items-center gap-2">
-                                        <Flame size={18} className="text-bk-red fill-bk-red" /> Customize
+                                        <Flame size={18} className="text-bk-red fill-bk-red" /> {t('customize') || 'Customize'}
                                     </h3>
                                     <div className="space-y-3">
                                         {product.availableModifiers.map(mod => {
@@ -205,7 +209,7 @@ const ProductModal: React.FC<{ product: Product | null; onClose: () => void }> =
                                                     className={`p-4 rounded-2xl flex justify-between items-center cursor-pointer border-2 ${isSelected ? 'bg-white border-bk-red shadow-lg' : 'bg-white/50 border-transparent'}`}
                                                 >
                                                     <span className="font-bold text-bk-brown">{mod.name}</span>
-                                                    <span className="text-sm font-bold text-bk-red">+{mod.price.toLocaleString()} ₸</span>
+                                                    <span className="text-sm font-bold text-bk-red">+{formatPrice(mod.price)}</span>
                                                 </div>
                                             );
                                         })}
@@ -225,8 +229,8 @@ const ProductModal: React.FC<{ product: Product | null; onClose: () => void }> =
                                     onClick={() => { addToCart(product, quantity, selectedModifiers); onClose(); }}
                                     className="flex-1 bg-bk-red text-white h-14 rounded-full font-bold flex justify-between items-center px-6"
                                 >
-                                    <span>Add to Cart</span>
-                                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-black">{total.toLocaleString()} ₸</span>
+                                    <span>{t('add_to_cart') || 'Add to Cart'}</span>
+                                    <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-black">{formatPrice(total)}</span>
                                 </BouncyButton>
                             </div>
                         </div>
@@ -244,13 +248,14 @@ const BottomNav: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { totalItems } = useCart();
+    const { t } = useSettings();
 
     const navItems = [
-        { path: '/customer', icon: Home, label: 'Home' },
-        { path: '/customer/menu', icon: Utensils, label: 'Menu' },
-        { path: '/customer/favorites', icon: Heart, label: 'Likes' },
-        { path: '/customer/profile', icon: UserIcon, label: 'Profile' },
-        { path: '/customer/cart', icon: ShoppingBag, label: 'Cart', badge: totalItems }
+        { path: '/customer', icon: Home, label: t('home') },
+        { path: '/customer/menu', icon: Utensils, label: t('menu') },
+        { path: '/customer/favorites', icon: Heart, label: t('favorites') },
+        { path: '/customer/profile', icon: UserIcon, label: t('profile') },
+        { path: '/customer/cart', icon: ShoppingBag, label: t('cart'), badge: totalItems }
     ];
 
     return (
@@ -297,6 +302,7 @@ const BottomNav: React.FC = () => {
 const HomePage: React.FC = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { t } = useSettings();
     const [userData, setUserData] = useState<any>(null);
 
     useEffect(() => {
@@ -313,7 +319,7 @@ const HomePage: React.FC = () => {
             <header className="flex justify-between items-center mb-8">
                 <div>
                     <h1 className="text-5xl font-black text-bk-brown tracking-tighter uppercase italic">Muslim<span className="text-bk-red">Food</span></h1>
-                    <p className="text-bk-brown/60 font-medium">Salam, {userData?.displayName?.split(' ')[0] || 'Gourmet'}! Hungry?</p>
+                    <p className="text-bk-brown/60 font-medium">{t('salam')}, {userData?.displayName?.split(' ')[0] || 'Gourmet'}! {t('hungry')}</p>
                 </div>
                 <motion.div
                     whileTap={{ scale: 0.9 }}
@@ -332,29 +338,29 @@ const HomePage: React.FC = () => {
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-bk-red rounded-full filter blur-[80px] opacity-40 -translate-y-1/2 translate-x-1/2" />
                 <div className="relative z-10">
-                    <span className="inline-block px-4 py-1.5 bg-bk-red text-white text-xs font-bold rounded-full mb-4 shadow-lg shadow-red-600/40">HALAL PRIDE</span>
-                    <h2 className="text-4xl font-black mb-2 leading-tight">MuslimFood<br />Treats</h2>
+                    <span className="inline-block px-4 py-1.5 bg-bk-red text-white text-xs font-bold rounded-full mb-4 shadow-lg shadow-red-600/40">{t('halal_pride')}</span>
+                    <h2 className="text-4xl font-black mb-2 leading-tight">MuslimFood<br />{t('signature_treats') || 'Treats'}</h2>
                     <p className="text-white/70 mb-6 max-w-[200px]">Get 50% off on all signature burgers today.</p>
                     <BouncyButton onClick={() => navigate('/customer/menu')} className="bg-[#F5EBDC] text-bk-brown px-8 py-4 rounded-2xl font-black flex items-center gap-2">
-                        Order Now <ArrowRight size={18} />
+                        {t('order_now')} <ArrowRight size={18} />
                     </BouncyButton>
                 </div>
                 <img src="https://cdn-icons-png.flaticon.com/512/3075/3075977.png" className="absolute -bottom-4 -right-8 w-48 h-48 object-contain drop-shadow-2xl rotate-12" alt="Burger" />
             </motion.div>
 
-            <h3 className="text-2xl font-black text-bk-brown mb-6">Explore</h3>
+            <h3 className="text-2xl font-black text-bk-brown mb-6">{t('explore') || 'Explore'}</h3>
             <div className="grid grid-cols-2 gap-4">
                 <BouncyButton onClick={() => navigate('/customer/menu')} className="glass-panel p-6 rounded-[2rem] flex flex-col items-center gap-3 text-center">
                     <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 mb-2">
                         <Utensils size={32} />
                     </div>
-                    <span className="font-bold text-bk-brown text-lg">Full Menu</span>
+                    <span className="font-bold text-bk-brown text-lg">{t('menu')}</span>
                 </BouncyButton>
                 <BouncyButton onClick={() => navigate('/customer/cart')} className="glass-panel p-6 rounded-[2rem] flex flex-col items-center gap-3 text-center">
                     <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center text-red-500 mb-2">
                         <ShoppingBag size={32} />
                     </div>
-                    <span className="font-bold text-bk-brown text-lg">My Cart</span>
+                    <span className="font-bold text-bk-brown text-lg">{t('cart')}</span>
                 </BouncyButton>
             </div>
         </div>
@@ -369,6 +375,7 @@ const MenuPage: React.FC = () => {
     const [search, setSearch] = useState('');
     const [category, setCategory] = useState('All');
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const { t } = useSettings();
 
     useEffect(() => {
         const unsubscribe = onSnapshot(collection(db, 'products'), (snapshot) => {
@@ -387,14 +394,14 @@ const MenuPage: React.FC = () => {
 
     return (
         <div className="min-h-screen pt-12 pb-32 px-6">
-            <h1 className="text-4xl font-black text-bk-brown mb-6">Our Menu</h1>
+            <h1 className="text-4xl font-black text-bk-brown mb-6">{t('menu')}</h1>
             <div className="relative mb-8">
                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-bk-brown/40">
                     <Search size={22} strokeWidth={3} />
                 </div>
                 <input
                     type="text"
-                    placeholder="Search..."
+                    placeholder={`${t('search')}...`}
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="w-full h-14 pl-14 pr-4 bg-white/60 rounded-2xl text-bk-brown font-bold outline-none"
@@ -408,7 +415,7 @@ const MenuPage: React.FC = () => {
                         onClick={() => setCategory(c)}
                         className={`px-6 py-3 rounded-full text-sm font-bold whitespace-nowrap ${category === c ? 'bg-bk-red text-white' : 'bg-white text-bk-brown'}`}
                     >
-                        {c}
+                        {c === 'All' ? t('all') || 'All' : c}
                     </button>
                 ))}
             </div>
@@ -431,6 +438,7 @@ const CartPage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
+    const { t, formatPrice } = useSettings();
 
     const handleCheckout = async () => {
         if (cart.length === 0 || !user) return;
@@ -460,9 +468,9 @@ const CartPage: React.FC = () => {
                 >
                     <ShoppingBag size={64} className="text-bk-brown/10" />
                 </motion.div>
-                <h2 className="text-3xl font-black text-bk-brown mb-4 tracking-tight">Your Tray is Empty</h2>
+                <h2 className="text-3xl font-black text-bk-brown mb-4 tracking-tight">{t('empty_tray')}</h2>
                 <p className="text-bk-brown/40 font-medium mb-10 max-w-[240px]">Seems like you haven't added any cravings yet.</p>
-                <BouncyButton onClick={() => navigate('/customer/menu')} className="bg-bk-red text-white px-10 py-5 rounded-[2rem] font-bold shadow-2xl shadow-red-500/30">Start Ordering</BouncyButton>
+                <BouncyButton onClick={() => navigate('/customer/menu')} className="bg-bk-red text-white px-10 py-5 rounded-[2rem] font-bold shadow-2xl shadow-red-500/30">{t('order_now')}</BouncyButton>
             </div>
         );
     }
@@ -470,7 +478,7 @@ const CartPage: React.FC = () => {
     return (
         <div className="min-h-screen pt-14 pb-48 px-6">
             <header className="flex justify-between items-center mb-10">
-                <h1 className="text-4xl font-black text-bk-brown tracking-tight italic uppercase">Your Tray</h1>
+                <h1 className="text-4xl font-black text-bk-brown tracking-tight italic uppercase">{t('your_tray')}</h1>
                 <div className="bg-white/50 px-4 py-2 rounded-2xl border border-white">
                     <span className="font-bold text-bk-brown text-sm">{cart.length} items</span>
                 </div>
@@ -507,7 +515,7 @@ const CartPage: React.FC = () => {
                                     )}
                                 </div>
                                 <div className="flex justify-between items-end">
-                                    <div className="font-black text-bk-red text-xl leading-none">{item.price.toLocaleString()} ₸</div>
+                                    <div className="font-black text-bk-red text-xl leading-none">{formatPrice(item.price)}</div>
                                 </div>
                             </div>
                         </motion.div>
@@ -526,8 +534,8 @@ const CartPage: React.FC = () => {
 
                     <div className="flex justify-between items-center mb-6 relative z-10">
                         <div>
-                            <p className="text-[#F5EBDC]/40 text-xs font-black uppercase tracking-widest mb-1">Total Payable</p>
-                            <h2 className="text-4xl font-black italic tracking-tighter">{totalPrice.toLocaleString()} <span className="text-xl">₸</span></h2>
+                            <p className="text-[#F5EBDC]/40 text-xs font-black uppercase tracking-widest mb-1">{t('total')}</p>
+                            <h2 className="text-4xl font-black italic tracking-tighter">{formatPrice(totalPrice)}</h2>
                         </div>
                         <div className="text-right">
                             <p className="text-[#F5EBDC]/40 text-[10px] font-bold uppercase mb-1">Fee included</p>
@@ -544,7 +552,7 @@ const CartPage: React.FC = () => {
                             <div className="w-6 h-6 border-4 border-[#502314] border-t-transparent rounded-full animate-spin" />
                         ) : (
                             <>
-                                <span>Place Order</span>
+                                <span>{t('checkout')}</span>
                                 <motion.div
                                     animate={{ x: [0, 5, 0] }}
                                     transition={{ repeat: Infinity, duration: 1.5 }}
@@ -565,6 +573,7 @@ const CartPage: React.FC = () => {
 // ============================================================================
 const ProfilePage: React.FC = () => {
     const { user, logout } = useAuth();
+    const { t, language, setLanguage, currency, setCurrency, formatPrice } = useSettings();
     const navigate = useNavigate();
     const [userData, setUserData] = useState<any>(null);
     const [orders, setOrders] = useState<Order[]>([]);
@@ -620,9 +629,9 @@ const ProfilePage: React.FC = () => {
     return (
         <div className="min-h-screen pt-14 pb-32 px-6 overflow-x-hidden">
             <div className="flex justify-between items-center mb-10">
-                <h1 className="text-4xl font-black text-bk-brown tracking-tight italic uppercase">Profile</h1>
+                <h1 className="text-4xl font-black text-bk-brown tracking-tight italic uppercase">{t('profile')}</h1>
                 <BouncyButton onClick={handleLogout} className="bg-red-50 text-bk-red px-5 py-2.5 rounded-full font-bold flex items-center gap-2 border border-red-100">
-                    <LogOut size={16} /> Logout
+                    <LogOut size={16} /> {t('logout')}
                 </BouncyButton>
             </div>
 
@@ -670,11 +679,48 @@ const ProfilePage: React.FC = () => {
                 </div>
             </div>
 
+            {/* Language & Currency Selectors */}
+            <div className="space-y-4 mb-8">
+                <div className="glass-panel p-6 rounded-[2rem]">
+                    <h3 className="text-xs font-black text-bk-brown/30 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        {t('language')}
+                    </h3>
+                    <div className="grid grid-cols-5 gap-2">
+                        {(['ru', 'uz', 'ky', 'kk', 'tg'] as const).map(lang => (
+                            <button
+                                key={lang}
+                                onClick={() => setLanguage(lang)}
+                                className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all ${language === lang ? 'bg-bk-red text-white shadow-lg' : 'bg-white text-bk-brown/40'}`}
+                            >
+                                {lang}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="glass-panel p-6 rounded-[2rem]">
+                    <h3 className="text-xs font-black text-bk-brown/30 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        {t('currency')}
+                    </h3>
+                    <div className="grid grid-cols-3 gap-2">
+                        {(['KZT', 'RUB', 'USD', 'UZS', 'KGS', 'TJS'] as const).map(curr => (
+                            <button
+                                key={curr}
+                                onClick={() => setCurrency(curr)}
+                                className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all ${currency === curr ? 'bg-bk-red text-white shadow-lg' : 'bg-white text-bk-brown/40'}`}
+                            >
+                                {curr}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="glass-panel p-6 rounded-[2rem] text-center bg-white/40">
                     <div className="text-3xl font-black text-bk-red mb-1">{orders.length}</div>
-                    <div className="text-xs font-bold text-bk-brown/40 uppercase tracking-widest">Orders</div>
+                    <div className="text-xs font-bold text-bk-brown/40 uppercase tracking-widest">{t('order_history').split(' ')[0]}</div>
                 </div>
                 <div className="glass-panel p-6 rounded-[2rem] text-center bg-white/40">
                     <div className="text-3xl font-black text-bk-orange mb-1">0</div>
@@ -686,7 +732,7 @@ const ProfilePage: React.FC = () => {
             <div className="mb-8">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-black text-bk-brown flex items-center gap-2">
-                        <History size={20} className="text-bk-red" /> Order History
+                        <History size={20} className="text-bk-red" /> {t('order_history')}
                     </h3>
                 </div>
 
@@ -709,7 +755,7 @@ const ProfilePage: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right flex items-center gap-4">
-                                    <div className="font-black text-bk-red text-lg">{order.totalAmount.toLocaleString()} ₸</div>
+                                    <div className="font-black text-bk-red text-lg">{formatPrice(order.totalAmount)}</div>
                                     <ChevronRight size={20} className="text-bk-brown/20 group-hover:text-bk-red transition-colors" />
                                 </div>
                             </div>

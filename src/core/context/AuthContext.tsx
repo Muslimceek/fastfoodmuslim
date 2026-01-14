@@ -9,23 +9,29 @@ interface AuthContextType {
     user: User | null;
     role: 'admin' | 'kitchen' | 'manager' | 'customer' | null;
     loading: boolean;
+    logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<'admin' | 'kitchen' | null>(null);
+    const [role, setRole] = useState<'admin' | 'kitchen' | 'manager' | 'customer' | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const logout = async () => {
+        await auth.signOut();
+    };
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
             if (currentUser) {
-                // Fetch role from Firestore
                 const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
                 if (userDoc.exists()) {
-                    setRole(userDoc.data().role);
+                    setRole(userDoc.data().role || 'customer');
+                } else {
+                    setRole('customer');
                 }
             } else {
                 setRole(null);
@@ -37,7 +43,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }, []);
 
     return (
-        <AuthContext.Provider value={{ user, role, loading }}>
+        <AuthContext.Provider value={{ user, role, loading, logout }}>
             {!loading && children}
         </AuthContext.Provider>
     );

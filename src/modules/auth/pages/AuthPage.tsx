@@ -7,7 +7,7 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../../core/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Loader2, ShoppingBag, ArrowLeft, Sparkles, Flame, ChefHat } from 'lucide-react';
+import { Lock, Mail, Loader2, ShoppingBag, ArrowLeft, Sparkles, Flame, ChefHat, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ============================================================================
@@ -101,6 +101,7 @@ const BackgroundMesh = () => (
 // ============================================================================
 const AuthPage: React.FC = () => {
     const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
+    const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -219,13 +220,21 @@ const AuthPage: React.FC = () => {
                 } else {
                     const userDoc = await getDoc(doc(db, 'users', user.uid));
                     const role = userDoc.data()?.role || 'customer';
-                    navigate(role === 'customer' ? '/kiosk' : role === 'kitchen' ? '/kitchen' : '/admin');
+                    navigate('/customer'); // Redirect to customer mobile app
                 }
             } else if (mode === 'register') {
                 if (STAFF_CREDENTIALS[email.toLowerCase()]) throw new Error('Staff email reserved. Please login.');
+                if (!fullName) throw new Error('Please enter your full name');
+
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await setDoc(doc(db, 'users', userCredential.user.uid), { email: email, role: 'customer', createdAt: new Date().toISOString() });
-                navigate('/kiosk');
+                await setDoc(doc(db, 'users', userCredential.user.uid), {
+                    email: email,
+                    displayName: fullName,
+                    role: 'customer',
+                    photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${fullName}`,
+                    createdAt: new Date().toISOString()
+                });
+                navigate('/customer');
             } else if (mode === 'forgot') {
                 await sendPasswordResetEmail(auth, email);
                 setMessage('Check your email for the magic link!');
@@ -261,11 +270,11 @@ const AuthPage: React.FC = () => {
                         >
                             <Flame size={40} className="text-white fill-white" />
                         </motion.div>
-                        <h1 className="text-4xl font-black text-white italic tracking-tighter mb-2">
-                            BURGER<span className="text-bk-orange">OS</span>
+                        <h1 className="text-4xl font-black text-white italic tracking-tighter mb-2 uppercase">
+                            Muslim<span className="text-bk-orange">Food</span>
                         </h1>
                         <p className="text-white/50 text-sm font-medium tracking-wide first-letter:uppercase">
-                            {mode === 'login' ? 'Staff & Customer Access' : mode === 'register' ? 'Join the Flame Club' : 'Recover Credentails'}
+                            {mode === 'login' ? 'Staff & Customer Access' : mode === 'register' ? 'Join the MuslimFood' : 'Recover Credentials'}
                         </p>
                     </div>
 
@@ -330,6 +339,23 @@ const AuthPage: React.FC = () => {
 
                     {/* Form */}
                     <form onSubmit={handleAuth} className="space-y-4">
+                        {mode === 'register' && (
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-3">Full Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                                    <input
+                                        type="text"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        className="w-full auth-input rounded-2xl py-4 pl-12 pr-4 text-sm font-bold outline-none h-14"
+                                        placeholder="Muslim Ostanov"
+                                        required
+                                    />
+                                </div>
+                            </div>
+                        )}
+
                         <div className="space-y-1.5">
                             <label className="text-[10px] font-black text-white/40 uppercase tracking-widest pl-3">Email Access</label>
                             <div className="relative">

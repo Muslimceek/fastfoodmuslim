@@ -218,8 +218,7 @@ const AuthPage: React.FC = () => {
                     await setDoc(doc(db, 'users', user.uid), { email: user.email, role: staffRole, updatedAt: new Date().toISOString() }, { merge: true });
                     navigate(staffRole === 'kitchen' ? '/kitchen' : '/admin');
                 } else {
-                    const userDoc = await getDoc(doc(db, 'users', user.uid));
-                    const role = userDoc.data()?.role || 'customer';
+                    await getDoc(doc(db, 'users', user.uid));
                     navigate('/customer'); // Redirect to customer mobile app
                 }
             } else if (mode === 'register') {
